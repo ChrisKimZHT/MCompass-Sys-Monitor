@@ -22,11 +22,15 @@ def get_cpu_usage():
     return psutil.cpu_percent()
 
 
+def get_memory_usage():
+    return psutil.virtual_memory().percent
+
+
 def main():
     while True:
-        cpu_usage = get_cpu_usage()
-        azimuth = percent_to_azimuth(cpu_usage, half=args.half)
-        loguru.logger.info(f"CPU Usage: {cpu_usage}%, Azimuth: {azimuth}")
+        usage = get_cpu_usage() if args.monitor_type == "cpu" else get_memory_usage()
+        azimuth = percent_to_azimuth(usage, half=args.half)
+        loguru.logger.info(f"Usage: {usage}%, Azimuth: {azimuth}deg")
         try:
             resp = requests.post(f"http://{args.compass_ip}/setAzimuth?azimuth={azimuth}")
             loguru.logger.debug(f"Status: {resp.status_code}")
@@ -38,6 +42,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCompass System Monitor")
     parser.add_argument("--compass-ip", type=str, required=True, help="IP address of the MCompass")
+    parser.add_argument("--monitor-type", type=str, default="cpu", help="Monitor type: cpu/mem")
     parser.add_argument("--interval", type=float, default=1.0, help="Interval between each update")
     parser.add_argument("--half", type=bool, default=True, help="Half circle mode")
     parser.add_argument("--silent", type=bool, default=False, help="Silent mode")
