@@ -4,6 +4,16 @@
 
 ![Preview](./images/preview.png)
 
+## 使用方式
+
+将指南针连接电脑（不需要和该程序在同一台设备上），并将指南针配网连接到局域网中。
+
+在 [Release](https://github.com/ChrisKimZHT/MCompass-Sys-Monitor/releases) 页下载对应平台的二进制文件，使用命令行运行，参数可见下文“运行参数”小节：
+
+```shell
+./MCompass-Sys-Monitor-Linux-x86_64-v1.0.0 --compass-ip 192.168.6.233 --interval 0.1
+```
+
 ## 运行参数
 
 | 参数             | 类型         | 默认值 | 说明                         |
