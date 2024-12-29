@@ -57,7 +57,7 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCompass System Monitor")
-    parser.add_argument("--compass-ip", type=str, required=True, help="IP address of the MCompass")
+    parser.add_argument("--compass-ip", type=str, default="", help="IP address of the MCompass")
     parser.add_argument("--monitor-type", type=str, default="cpu", help="Monitor type: cpu/mem")
     parser.add_argument("--interval", type=float, default=1.0, help="Interval between each update")
     parser.add_argument("--silent", action='store_true', help="Silent mode")
@@ -66,4 +66,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.silent:
         loguru.logger.remove()
+    if args.compass_ip == "":
+        loguru.logger.warning("IP address of the MCompass is not provided in the argument, receive it from stdin")
+        args.compass_ip = input("Enter the IP address of the MCompass: ")
     main()
