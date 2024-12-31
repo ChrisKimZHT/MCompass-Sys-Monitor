@@ -35,29 +35,50 @@ def percent_to_azimuth(percent: float, half: bool = False, log: bool = False) ->
     return azimuth
 
 
-def get_usage():
-    if args.monitor_type == "cpu":
+def get_usage(typ: str) -> float:
+    if typ == "cpu":
         return psutil.cpu_percent()
-    elif args.monitor_type == "mem":
+    elif typ == "mem":
         return psutil.virtual_memory().percent
     else:
         loguru.logger.error("Invalid monitor type")
         return 0.0
 
 
-def main():
+def set_azimuth(azimuth: float) -> None:
+    try:
+        resp = requests.post(f"http://{args.compass_ip}/setAzimuth?azimuth={azimuth}", timeout=0.5)
+        loguru.logger.info(f"Status: {resp.status_code}")
+    except Exception as e:
+        loguru.logger.error(f"Error: {e}")
+
+
+def set_azimuth_with_animation(cur_azimuth: float, tgt_azimuth: float, diff: int) -> None:
+    cur_azimuth = (cur_azimuth + 90) % 360
+    tgt_azimuth = (tgt_azimuth + 90) % 360
+
+    while cur_azimuth != tgt_azimuth:
+        if cur_azimuth < tgt_azimuth:
+            cur_azimuth = min(cur_azimuth + diff, tgt_azimuth)
+        else:
+            cur_azimuth = max(cur_azimuth - diff, tgt_azimuth)
+        set_azimuth((cur_azimuth - 90 + 360) % 360)
+
+
+def main(args: argparse.Namespace) -> None:
+    cur_azimuth = 0.0
     while True:
         start_time = time.time()
 
-        usage = get_usage()
+        usage = get_usage(args.monitor_type)
         azimuth = percent_to_azimuth(usage, half=args.half, log=args.logarithm)
         loguru.logger.info(f"Usage: {usage}%, Azimuth: {azimuth}°")
 
-        try:
-            resp = requests.post(f"http://{args.compass_ip}/setAzimuth?azimuth={azimuth}", timeout=0.5)
-            loguru.logger.info(f"Status: {resp.status_code}")
-        except Exception as e:
-            loguru.logger.error(f"Error: {e}")
+        if args.animation == 0:
+            set_azimuth(azimuth)
+        else:
+            set_azimuth_with_animation(cur_azimuth, azimuth, args.animation)
+            cur_azimuth = azimuth
 
         elapsed_time = time.time() - start_time
         time.sleep(max(0, args.interval - elapsed_time))
@@ -71,10 +92,11 @@ if __name__ == "__main__":
     parser.add_argument("--silent", action='store_true', help="Silent mode")
     parser.add_argument("--half", action='store_true', help="Half circle mode")
     parser.add_argument("--logarithm", action='store_true', help="Logarithmic curve mode")
+    parser.add_argument("--animation", type=int, default=0, help="Animation interpolation degree, 0 for no animation")
     args = parser.parse_args()
     if args.silent:
         loguru.logger.remove()
     if args.compass_ip == "":
         loguru.logger.warning("IP address of the MCompass is not provided in the argument, receive it from stdin")
         args.compass_ip = input("Enter the IP address of the MCompass: ")
-    main()
+    main(args)
