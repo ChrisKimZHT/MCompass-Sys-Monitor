@@ -24,3 +24,4 @@
 | `--half`         | `store_true` | 否     | 仅使用指南针上半圈显示       |
 | `--silent`       | `store_true` | 否     | 静默模式，不输出任何日志     |
 | `--logarithm`    | `store_true` | 否     | 对数模式，低数值时指针更灵敏 |
+| `--animation`    | `int`        | 0      | 动画插值角度，0 为关闭动画   |
