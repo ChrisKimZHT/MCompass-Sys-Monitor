@@ -35,24 +35,32 @@ def percent_to_azimuth(percent: float, half: bool = False, log: bool = False) ->
     return azimuth
 
 
-def get_cpu_usage():
-    return psutil.cpu_percent()
-
-
-def get_memory_usage():
-    return psutil.virtual_memory().percent
+def get_usage():
+    if args.monitor_type == "cpu":
+        return psutil.cpu_percent()
+    elif args.monitor_type == "mem":
+        return psutil.virtual_memory().percent
+    else:
+        loguru.logger.error("Invalid monitor type")
+        return 0.0
 
 
 def main():
     while True:
-        usage = get_cpu_usage() if args.monitor_type == "cpu" else get_memory_usage()
+        start_time = time.time()
+
+        usage = get_usage()
         azimuth = percent_to_azimuth(usage, half=args.half, log=args.logarithm)
+        loguru.logger.info(f"Usage: {usage}%, Azimuth: {azimuth}°")
+
         try:
             resp = requests.post(f"http://{args.compass_ip}/setAzimuth?azimuth={azimuth}", timeout=0.5)
-            loguru.logger.info(f"Usage: {usage}%, Azimuth: {azimuth}°, Status: {resp.status_code}")
+            loguru.logger.info(f"Status: {resp.status_code}")
         except Exception as e:
-            loguru.logger.error(f"Usage: {usage}%, Azimuth: {azimuth}°, Error: {e}")
-        time.sleep(args.interval)
+            loguru.logger.error(f"Error: {e}")
+
+        elapsed_time = time.time() - start_time
+        time.sleep(max(0, args.interval - elapsed_time))
 
 
 if __name__ == "__main__":
